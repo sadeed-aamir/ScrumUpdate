@@ -11,7 +11,7 @@ Provides system health monitoring and statistics.
 
 import logging
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response, status
 from database import DatabaseManager
 from tasks import app as celery_app
 from multi_tenant_manager import multi_tenant_manager
@@ -33,7 +33,7 @@ async def ping():
 
 
 @health_router.get("/health", response_model=SystemHealthResponse)
-async def get_system_health():
+async def get_system_health(response: Response):
     """
     Get comprehensive system health information.
 
@@ -113,6 +113,9 @@ async def get_system_health():
             }
         except:
             health_status["queue_stats"] = {"error": "Unable to fetch queue statistics"}
+
+        if health_status["status"] != "healthy":
+            response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
         return SystemHealthResponse(**health_status)
 
